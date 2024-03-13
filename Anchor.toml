@@ -5,13 +5,16 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-presale = "8hMgPa4XrC2a5Re6JPnZ2YupeohqHdw2cRg6eqAtkiN6"
+# token2022 = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+presale = "9gvyTRdbRZpp7gY3DiyUHKMXg8QKH9U7rMg7ekbxRqS1" # laptop
+# presale = "CUF1pNp3pxjFUVQCvFpuAVhv6uXfutZhPe8sSDwmkyXF" # office
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
 cluster = "localnet"
+# cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

@@ -46,6 +46,7 @@ describe("presale", () => {
       const presaleAccountData = await program.account.presaleAccount.fetch(presaleAccountPublicKey);
       if (presaleAccountData.isInitialized) {
         console.log('presaleAccountData.isInitialized', presaleAccountData.isInitialized);
+        console.log('presaleAccountData.destination_wallet_pubkey', presaleAccountData.destination_wallet_pubkey);
         return;
       }
     }
