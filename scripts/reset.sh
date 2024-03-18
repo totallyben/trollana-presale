@@ -1,9 +1,6 @@
-# Testing
-
-## Script to reset 
-
-```
 #!/usr/bin/env bash
+
+STEP_TO_RUN=$1
 
 WALLET_DIR=~/workspace/solana/wallets
 BUYER_WALLET=${WALLET_DIR}/presale-buyer.json
@@ -57,12 +54,15 @@ mint_tokens () {
 send_presale_tokens () {
   PRESALE_TOKENS=100000000
   TOKEN_ACCOUNT_ADDRESS=DyDUj1yiNTBQMxN37t9sN5MaW1RGYJD2THCsAfi55hnX
-#  spl-token transfer --fund-recipient ${TOKEN_MINT_ADDRESS} ${PRESALE_TOKENS} ${TOKEN_ACCOUNT_ADDRESS}
+  spl-token transfer --fund-recipient ${TOKEN_MINT_ADDRESS} ${PRESALE_TOKENS} ${TOKEN_ACCOUNT_ADDRESS}
   spl-token transfer --fund-recipient --allow-unfunded-recipient ${TOKEN_MINT_ADDRESS} ${PRESALE_TOKENS} ${TOKEN_WALLET}
 }
 
 # program initialise
 step1 () {
+  if [[ ${STEP_TO_RUN} != 1 ]]; then
+    return
+  fi
   reset_wallets
   generate_token
   update_dot_envs
@@ -74,10 +74,16 @@ step1 () {
 
 # post program initialise
 step2 () {
+  if [[ ${STEP_TO_RUN} != 2 ]]; then
+    return
+  fi
+
   . ${ANCHOR_DOT_ENV}
   mint_tokens
   send_presale_tokens
   
   echo "TOKEN MINT: ${TOKEN_MINT_ADDRESS}"
 }
-```
+
+step1
+step2

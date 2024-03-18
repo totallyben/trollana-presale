@@ -8,8 +8,8 @@ use anchor_spl::{
     // associated_token::AssociatedToken,
 };
 
-declare_id!("9gvyTRdbRZpp7gY3DiyUHKMXg8QKH9U7rMg7ekbxRqS1"); // laptop
-// declare_id!("CUF1pNp3pxjFUVQCvFpuAVhv6uXfutZhPe8sSDwmkyXF"); // office
+// declare_id!("9gvyTRdbRZpp7gY3DiyUHKMXg8QKH9U7rMg7ekbxRqS1"); // laptop
+declare_id!("CUF1pNp3pxjFUVQCvFpuAVhv6uXfutZhPe8sSDwmkyXF"); // office
 
 
 #[program]
@@ -26,10 +26,15 @@ pub mod presale {
         presale_account.destination_wallet_pubkey = *ctx.accounts.destination_wallet.key;
         // presale_account.tokens_per_sol = 10000;
 
+        msg!("Initialising presale account");
+        msg!("Start time {}", start_time);
+        msg!("End time {}", end_time);
+        msg!("Recipient wallet {}", presale_account.destination_wallet_pubkey);
+
         Ok(())
     }
 
-    pub fn buy_tokens(ctx: Context<BuyTokens>, presale_token: String, presale_symbol: String, sol_amount: u64) -> Result<()> {
+    pub fn buy_tokens(ctx: Context<BuyTokens>, presale_token: String, presale_symbol: String, sol_lamports_amount: u64) -> Result<()> {
         let presale_account = &mut ctx.accounts.presale_account;
 
         // Check if the presale account has been initialized
@@ -44,12 +49,13 @@ pub mod presale {
 
         let buyer = &ctx.accounts.buyer;
         let destination_wallet = &ctx.accounts.destination_wallet;
+        let sol_amount = lamports_to_sol(sol_lamports_amount);
 
         // Create a transfer instruction from the buyer to the destination wallet
         let transfer_instruction = system_instruction::transfer(
             &buyer.key(),
             &destination_wallet.key(),
-            sol_amount,
+            sol_lamports_amount,
         );
 
         // Invoke the transfer instruction
@@ -64,9 +70,7 @@ pub mod presale {
         )?;
         msg!("Completed transfer of {} SOL from recipient wallet", sol_amount);
 
-        // let token_account = &mut ctx.accounts.token_account;
-        // let token_account_authority = &mut ctx.accounts.token_account_authority;
-        let token_amount = sol_amount * 10000;
+        let token_amount = sol_to_token(sol_amount, 100000.0, 9).ok_or(PresaleError::OverflowError)?;
 
         let seeds = &[presale_token.as_bytes(), presale_symbol.as_bytes(), b"token_account_authority"];
         let (_, bump_seed) = Pubkey::find_program_address(seeds, ctx.program_id);
@@ -78,6 +82,9 @@ pub mod presale {
             &[bump_seed],
         ];
         let signer_seeds = &[&new_seeds[..]];
+
+        msg!("Token account key: {}", ctx.accounts.token_account.to_account_info().key);
+        msg!("Token account balance: {}", ctx.accounts.token_account.amount);
 
         msg!("Initiating transfer of {} tokens to buyer wallet", token_amount);
         anchor_spl::token_2022::transfer_checked(
@@ -104,6 +111,16 @@ pub mod presale {
         presale_account.is_active = false;
         Ok(())
     }
+}
+
+pub fn lamports_to_sol(lamports: u64) -> f64 {
+    lamports as f64 / 1_000_000_000.0
+}
+
+fn sol_to_token(sol_amount: f64, tokens_per_sol: f64, decimal_places: u32) -> Option<u64> {
+    let multiplier = 10u64.pow(decimal_places);
+    let token_amount = (sol_amount * tokens_per_sol).round() as u64;
+    token_amount.checked_mul(multiplier)
 }
 
 #[derive(Accounts)]
@@ -209,5 +226,7 @@ pub enum PresaleError {
     PresaleNotStarted,
     #[msg("The presale has already ended.")]
     PresaleEnded,
+    #[msg("Could not calculate the correct amount of tokens.")]
+    OverflowError,
     // Include additional error types as necessary
 }
