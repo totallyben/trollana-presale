@@ -1,15 +1,14 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import bs58 from 'bs58';
+
 import { Connection, PublicKey, Keypair } from '@solana/web3.js';
 import {  TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import * as anchor from '@coral-xyz/anchor';
 import { AnchorProvider, Program, Wallet } from '@coral-xyz/anchor';
 
 import idl from '../target/idl/presale.json' assert { type: 'json' };
-
-const presaleToken = 'Shill';
-const presaleSymbol = 'SHILL';
 
 // Load the keypair from the local wallet JSON file asynchronously
 async function loadKeypair(wallet) {
@@ -44,18 +43,23 @@ async function main() {
   const startTime = Math.floor(Date.now() / 1000); // Current time in seconds
   const endTime = startTime + 7 * 24 * 60 * 60; // One week from the start time
 
+  const decodedBytes = bs58.decode(process.env.TOKEN_MINT_ADDRESS);
+
+  const firstTenBytes = decodedBytes.slice(0, 10); // Slice the first ten bytes
+  const presaleRef = bs58.encode(firstTenBytes); // Re-encode to base58
+
   const [presaleAccountPublicKey] = PublicKey.findProgramAddressSync(
-    [Buffer.from(presaleToken), Buffer.from(presaleSymbol)],
+    [Buffer.from(presaleRef), Buffer.from('presale_account')],
     program.programId
   );
-
+  
   const [tokenAccountPublicKey] = PublicKey.findProgramAddressSync(
-    [Buffer.from(presaleToken), Buffer.from(presaleSymbol), 'token_account'],
+    [Buffer.from(presaleRef), Buffer.from('token_account')],
     program.programId
   );
-
+  
   const [tokenAuthorityPublicKey] = PublicKey.findProgramAddressSync(
-    [Buffer.from(presaleToken), Buffer.from(presaleSymbol), 'token_account_authority'],
+    [Buffer.from(presaleRef), Buffer.from('token_account_authority')],
     program.programId
   );
 
@@ -78,9 +82,12 @@ async function main() {
   const mint = new PublicKey(process.env.TOKEN_MINT_ADDRESS);
 
   const tokensPerSol = 100000;
-
+  const minBuy = 1;
+  const maxBuy = 10;
+  const presaleTokensAvailable = 100000000;
+  
   const tx = await program.methods
-    .initialize(presaleToken, presaleSymbol, new BN(startTime), new BN(endTime))
+    .initialize(presaleRef, new BN(startTime), new BN(endTime), tokensPerSol, minBuy, maxBuy, presaleTokensAvailable)
     .accounts({
       presaleAccount: presaleAccountPublicKey,
       user: provider.wallet.publicKey,

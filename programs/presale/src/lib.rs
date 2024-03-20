@@ -8,15 +8,18 @@ use anchor_spl::{
     // associated_token::AssociatedToken,
 };
 
-// declare_id!("9gvyTRdbRZpp7gY3DiyUHKMXg8QKH9U7rMg7ekbxRqS1"); // laptop
-declare_id!("CUF1pNp3pxjFUVQCvFpuAVhv6uXfutZhPe8sSDwmkyXF"); // office
+declare_id!("9gvyTRdbRZpp7gY3DiyUHKMXg8QKH9U7rMg7ekbxRqS1"); // laptop
+// declare_id!("CUF1pNp3pxjFUVQCvFpuAVhv6uXfutZhPe8sSDwmkyXF"); // office
 
 
 #[program]
 pub mod presale {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, _presale_token: String, _presale_symbol: String, start_time: u64, end_time: u64) -> Result<()> {
+    pub fn initialize(ctx: Context<Initialize>, _presale_ref: String, start_time: u64, end_time: u64, tokens_per_sol: f64, min_buy: u32, max_buy: u32, tokens_available: f64) -> Result<()> {
+        msg!("Initialising presale account");
+        msg!("_presale_ref {}", _presale_ref);
+
         let presale_account = &mut ctx.accounts.presale_account;
 
         presale_account.is_initialized = true;
@@ -24,7 +27,11 @@ pub mod presale {
         presale_account.end_time = end_time;
         presale_account.is_active = true;
         presale_account.destination_wallet_pubkey = *ctx.accounts.destination_wallet.key;
-        // presale_account.tokens_per_sol = 10000;
+        presale_account.tokens_per_sol = tokens_per_sol;
+        presale_account.min_buy = min_buy;
+        presale_account.max_buy = max_buy;
+        presale_account.tokens_available = tokens_available;
+        presale_account.tokens_bought = 0.0;
 
         msg!("Initialising presale account");
         msg!("Start time {}", start_time);
@@ -34,7 +41,7 @@ pub mod presale {
         Ok(())
     }
 
-    pub fn buy_tokens(ctx: Context<BuyTokens>, presale_token: String, presale_symbol: String, sol_lamports_amount: u64) -> Result<()> {
+    pub fn buy_tokens(ctx: Context<BuyTokens>, sol_lamports_amount: u64) -> Result<()> {
         let presale_account = &mut ctx.accounts.presale_account;
 
         // Check if the presale account has been initialized
@@ -70,14 +77,15 @@ pub mod presale {
         )?;
         msg!("Completed transfer of {} SOL from recipient wallet", sol_amount);
 
-        let token_amount = sol_to_token(sol_amount, 100000.0, 9).ok_or(PresaleError::OverflowError)?;
+        let token_amount = sol_to_token(sol_amount, presale_account.tokens_per_sol, 9).ok_or(PresaleError::OverflowError)?;
 
-        let seeds = &[presale_token.as_bytes(), presale_symbol.as_bytes(), b"token_account_authority"];
+        let mint = &ctx.accounts.mint;
+        let mint_address = mint.to_account_info().key;
+        let seeds = &[mint_address.as_ref(), b"token_account_authority"];
         let (_, bump_seed) = Pubkey::find_program_address(seeds, ctx.program_id);
 
         let new_seeds = &[
-            presale_token.as_bytes(),
-            presale_symbol.as_bytes(),
+            mint_address.as_ref(),
             b"token_account_authority",
             &[bump_seed],
         ];
@@ -103,6 +111,8 @@ pub mod presale {
         )?;
         msg!("Completed transfer of {} tokens to buyer wallet", token_amount);
 
+        presale_account.tokens_bought += token_amount as f64;
+
         Ok(())
     }
 
@@ -124,14 +134,14 @@ fn sol_to_token(sol_amount: f64, tokens_per_sol: f64, decimal_places: u32) -> Op
 }
 
 #[derive(Accounts)]
-#[instruction(presale_token: String, presale_symbol: String)] 
+#[instruction(presale_ref: String)] 
 pub struct Initialize<'info> {
     #[account(
         init,
-        seeds = [presale_token.as_bytes(), presale_symbol.as_bytes()], // Use the seed for the presale account
+        seeds = [presale_ref.as_bytes(), b"presale_account".as_ref()], 
         bump,
         payer = payer,
-        space = 8 + 1 + 8 + 8 + 1 + 32,
+        space = 90 + 16,
     )]
     pub presale_account: Account<'info, PresaleAccount>,
     #[account(mut)]
@@ -139,7 +149,7 @@ pub struct Initialize<'info> {
 
     #[account(
         init,
-        seeds = [presale_token.as_bytes(), presale_symbol.as_bytes(), b"token_account".as_ref()], 
+        seeds = [presale_ref.as_bytes(), b"token_account".as_ref()], 
         bump,
         payer = payer, 
         token::mint = mint, 
@@ -149,7 +159,7 @@ pub struct Initialize<'info> {
     pub token_account: InterfaceAccount<'info, TokenAccount>,
     /// CHECK: This account is only used to authorize transactions from the presale_account
     #[account(
-        seeds = [presale_token.as_bytes(), presale_symbol.as_bytes(), b"token_account_authority".as_ref()], 
+        seeds = [presale_ref.as_bytes(), b"token_account_authority".as_ref()], 
         bump,
     )]
     pub token_account_authority: AccountInfo<'info>,
@@ -168,7 +178,6 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(presale_token: String, presale_symbol: String)] 
 pub struct BuyTokens<'info> {
     #[account(mut)]
     pub presale_account: Account<'info, PresaleAccount>,
@@ -213,7 +222,11 @@ pub struct PresaleAccount {
     pub end_time: u64,
     pub is_active: bool,
     pub destination_wallet_pubkey: Pubkey,
-    // pub tokens_per_sol: u64,
+    pub tokens_per_sol: f64,
+    pub min_buy: u32,
+    pub max_buy: u32,
+    pub tokens_available: f64,
+    pub tokens_bought: f64,
 }
 
 #[error_code]

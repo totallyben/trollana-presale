@@ -6,7 +6,7 @@ WALLET_DIR=~/workspace/solana/wallets
 BUYER_WALLET=${WALLET_DIR}/presale-buyer.json
 RECIPIENT_WALLET=${WALLET_DIR}/presale-recipient.json
 TOKEN_WALLET=${WALLET_DIR}/presale-tokens.json
-ANCHOR_WORKSPACE=/home/gritzb/workspace/solana/presale
+ANCHOR_WORKSPACE=/home/gritzb/workspace/solana/trollana-presale
 ANCHOR_DOT_ENV=${ANCHOR_WORKSPACE}/.env
 
 reset_wallets () {
@@ -34,7 +34,7 @@ update_dot_envs() {
   sed -i "s/^TOKEN_MINT_ADDRESS=.*/TOKEN_MINT_ADDRESS=${TOKEN_MINT_ADDRESS}/" ${ANCHOR_DOT_ENV}
 }
 
-mint_tokens () {  
+mint_tokens () {
   TOKEN_NAME=Banana
   SYMBOL=BNN
   URL="example.com"
@@ -53,12 +53,12 @@ mint_tokens () {
 
 send_presale_tokens () {
   PRESALE_TOKENS=100000000
-  TOKEN_ACCOUNT_ADDRESS=DyDUj1yiNTBQMxN37t9sN5MaW1RGYJD2THCsAfi55hnX
+  TOKEN_ACCOUNT_ADDRESS=${TOKEN_ACCOUNT_PUBLIC_KEY}
   spl-token transfer --fund-recipient ${TOKEN_MINT_ADDRESS} ${PRESALE_TOKENS} ${TOKEN_ACCOUNT_ADDRESS}
   spl-token transfer --fund-recipient --allow-unfunded-recipient ${TOKEN_MINT_ADDRESS} ${PRESALE_TOKENS} ${TOKEN_WALLET}
 }
 
-# program initialise
+# program reset and deploy
 step1 () {
   if [[ ${STEP_TO_RUN} != 1 ]]; then
     return
@@ -69,12 +69,21 @@ step1 () {
   
   cd ${ANCHOR_WORKSPACE}
   anchor deploy
+
+  echo "TOKEN MINT: ${TOKEN_MINT_ADDRESS}"
+}
+
+# program initialise
+step2 () {
+  if [[ ${STEP_TO_RUN} != 2 ]]; then
+    return
+  fi
   node app/initialise.js
 }
 
 # post program initialise
-step2 () {
-  if [[ ${STEP_TO_RUN} != 2 ]]; then
+step3 () {
+  if [[ ${STEP_TO_RUN} != 3 ]]; then
     return
   fi
 
@@ -87,3 +96,4 @@ step2 () {
 
 step1
 step2
+step3
