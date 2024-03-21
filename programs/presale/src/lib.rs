@@ -8,8 +8,8 @@ use anchor_spl::{
     // associated_token::AssociatedToken,
 };
 
-// declare_id!("9gvyTRdbRZpp7gY3DiyUHKMXg8QKH9U7rMg7ekbxRqS1"); // laptop
-declare_id!("CUF1pNp3pxjFUVQCvFpuAVhv6uXfutZhPe8sSDwmkyXF"); // office
+declare_id!("GwrFvVJYaqPqoyDQvNYdr8a3ewvSTeyei92URkqU5Ak3"); // laptop
+// declare_id!("CUF1pNp3pxjFUVQCvFpuAVhv6uXfutZhPe8sSDwmkyXF"); // office
 
 
 #[program]
@@ -62,13 +62,13 @@ pub mod presale {
         let destination_wallet = &ctx.accounts.destination_wallet;
 
         // destination wallet must match
-        require!(destination_wallet.key.to_string() != presale_account.destination_wallet_pubkey.to_string(), PresaleError::InvalidDestinationWallet);
+        require!(destination_wallet.key.to_string() == presale_account.destination_wallet_pubkey.to_string(), PresaleError::InvalidDestinationWallet);
 
         let sol_amount = lamports_to_sol(sol_lamports_amount);
 
         // check valid sol amount
-        require!(sol_amount < presale_account.min_buy as f64, PresaleError::BuyAmountToLow);
-        require!(sol_amount > presale_account.max_buy as f64, PresaleError::BuyAmountToHigh);
+        require!(sol_amount >= presale_account.min_buy as f64, PresaleError::BuyAmountToLow);
+        require!(sol_amount <= presale_account.max_buy as f64, PresaleError::BuyAmountToHigh);
 
         // Create a transfer instruction from the buyer to the destination wallet
         let transfer_instruction = system_instruction::transfer(

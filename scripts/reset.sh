@@ -55,7 +55,7 @@ send_presale_tokens () {
   PRESALE_TOKENS=100000000
   TOKEN_ACCOUNT_ADDRESS=${TOKEN_ACCOUNT_PUBLIC_KEY}
   spl-token transfer --fund-recipient ${TOKEN_MINT_ADDRESS} ${PRESALE_TOKENS} ${TOKEN_ACCOUNT_ADDRESS}
-  spl-token transfer --fund-recipient --allow-unfunded-recipient ${TOKEN_MINT_ADDRESS} ${PRESALE_TOKENS} ${TOKEN_WALLET}
+  # spl-token transfer --fund-recipient --allow-unfunded-recipient ${TOKEN_MINT_ADDRESS} ${PRESALE_TOKENS} ${TOKEN_WALLET}
 }
 
 # program reset and deploy
@@ -71,8 +71,6 @@ step1 () {
   anchor deploy
   rsync -avz ${ANCHOR_WORKSPACE}/target/types/presale.ts ${DAPP_WORKSPACE}/idl/presale.ts
   node app/initialise.js
-
-  echo "TOKEN MINT: ${TOKEN_MINT_ADDRESS}"
 }
 
 # post program initialise
