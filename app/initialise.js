@@ -45,9 +45,12 @@ async function main() {
 
   const decodedBytes = bs58.decode(process.env.TOKEN_MINT_ADDRESS);
 
-  const firstTenBytes = decodedBytes.slice(0, 10); // Slice the first ten bytes
-  const presaleRef = bs58.encode(firstTenBytes); // Re-encode to base58
+  const firstTenBytes = decodedBytes.slice(0, 10);
+  const presaleRef = bs58.encode(firstTenBytes); 
 
+  console.log('presaleRef', presaleRef);
+  // return;
+  
   const [presaleAccountPublicKey] = PublicKey.findProgramAddressSync(
     [Buffer.from(presaleRef), Buffer.from('presale_account')],
     program.programId
@@ -69,8 +72,8 @@ async function main() {
     const presaleAccountData = await program.account.presaleAccount.fetch(presaleAccountPublicKey);
     if (presaleAccountData.isInitialized) {
       console.log('presaleAccountData.isInitialized', presaleAccountData.isInitialized);
-      console.log('presaleAccountData.destinationWalletPubkey', presaleAccountData.destinationWalletPubkey);
-      console.log('tokenAccountPublicKey', tokenAccountPublicKey);
+      console.log('presaleAccountData.destinationWalletPubkey', presaleAccountData.destinationWalletPubkey.toString());
+      console.log('tokenAccountPublicKey', tokenAccountPublicKey.toString());
       return;
     }
   }
@@ -87,7 +90,7 @@ async function main() {
   const presaleTokensAvailable = 100000000;
   
   const tx = await program.methods
-    .initialize(presaleRef, new BN(startTime), new BN(endTime), tokensPerSol, minBuy, maxBuy, presaleTokensAvailable)
+    .initialize(presaleRef, new BN(startTime), new BN(endTime), tokensPerSol, minBuy, maxBuy, new BN(presaleTokensAvailable))
     .accounts({
       presaleAccount: presaleAccountPublicKey,
       user: provider.wallet.publicKey,
@@ -129,7 +132,7 @@ async function pollForInitialization(program, presaleAccountPublicKey, tokenAcco
           if (presaleAccountData.isInitialized) {
             clearInterval(intervalId);
             console.log('Initialization confirmed');
-            console.log('tokenAccountPublicKey', tokenAccountPublicKey);
+            console.log('tokenAccountPublicKey', tokenAccountPublicKey.toString());
             resolve();
           }
         }

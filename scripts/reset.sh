@@ -8,6 +8,7 @@ RECIPIENT_WALLET=${WALLET_DIR}/presale-recipient.json
 TOKEN_WALLET=${WALLET_DIR}/presale-tokens.json
 ANCHOR_WORKSPACE=/home/gritzb/workspace/solana/trollana-presale
 ANCHOR_DOT_ENV=${ANCHOR_WORKSPACE}/.env
+DAPP_WORKSPACE=/home/gritzb/workspace/trollana/trollana-dapp
 
 reset_wallets () {
   rm -rf ${BUYER_WALLET} ${RECIPIENT_WALLET}
@@ -16,7 +17,6 @@ reset_wallets () {
   solana-keygen new --outfile ${TOKEN_WALLET}
   solana airdrop 1000 ${RECIPIENT_WALLET}
   solana airdrop 1000 ${BUYER_WALLET}
-  
 }
 
 generate_token () {
@@ -69,21 +69,15 @@ step1 () {
   
   cd ${ANCHOR_WORKSPACE}
   anchor deploy
+  rsync -avz ${ANCHOR_WORKSPACE}/target/types/presale.ts ${DAPP_WORKSPACE}/idl/presale.ts
+  node app/initialise.js
 
   echo "TOKEN MINT: ${TOKEN_MINT_ADDRESS}"
 }
 
-# program initialise
+# post program initialise
 step2 () {
   if [[ ${STEP_TO_RUN} != 2 ]]; then
-    return
-  fi
-  node app/initialise.js
-}
-
-# post program initialise
-step3 () {
-  if [[ ${STEP_TO_RUN} != 3 ]]; then
     return
   fi
 
@@ -96,4 +90,3 @@ step3 () {
 
 step1
 step2
-step3
