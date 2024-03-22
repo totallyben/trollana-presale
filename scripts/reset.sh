@@ -11,7 +11,7 @@ ANCHOR_DOT_ENV=${ANCHOR_WORKSPACE}/.env
 DAPP_WORKSPACE=/home/gritzb/workspace/trollana/trollana-dapp
 
 reset_wallets () {
-  rm -rf ${BUYER_WALLET} ${RECIPIENT_WALLET}
+  rm -rf ${BUYER_WALLET} ${RECIPIENT_WALLET} ${TOKEN_WALLET}
   solana-keygen new --outfile ${BUYER_WALLET}
   solana-keygen new --outfile ${RECIPIENT_WALLET}
   solana-keygen new --outfile ${TOKEN_WALLET}
@@ -60,28 +60,37 @@ send_presale_tokens () {
 
 # program reset and deploy
 step1 () {
-  if [[ ${STEP_TO_RUN} != 1 ]]; then
-    return
-  fi
+  # if [[ ${STEP_TO_RUN} != 1 ]]; then
+  #   return
+  # fi
   reset_wallets
   generate_token
   update_dot_envs
   
   cd ${ANCHOR_WORKSPACE}
+  anchor build
   anchor deploy
   rsync -avz ${ANCHOR_WORKSPACE}/target/types/presale.ts ${DAPP_WORKSPACE}/idl/presale.ts
-  node app/initialise.js
+
+  echo "Initialising..."
+  output="$(node app/initialise.js)" 
+  tokenAccountPublicKey=$(echo "$output" | grep 'tokenAccountPublicKey' | awk '{print $2}')
+  echo "tokenAccountPublicKey ${tokenAccountPublicKey}"
+
+  sed -i "s/^TOKEN_ACCOUNT_PUBLIC_KEY=.*/TOKEN_ACCOUNT_PUBLIC_KEY=${tokenAccountPublicKey}/" ${ANCHOR_DOT_ENV}
 }
 
 # post program initialise
 step2 () {
-  if [[ ${STEP_TO_RUN} != 2 ]]; then
-    return
-  fi
+  # if [[ ${STEP_TO_RUN} != 2 ]]; then
+  #   return
+  # fi
 
   . ${ANCHOR_DOT_ENV}
   mint_tokens
   send_presale_tokens
+
+  solana airdrop 100 CaENpeu35q6rqn6mih7aTKUUsXQJf5VFCsPvJg9ZkrTu
   
   echo "TOKEN MINT: ${TOKEN_MINT_ADDRESS}"
 }

@@ -16,7 +16,7 @@ declare_id!("GwrFvVJYaqPqoyDQvNYdr8a3ewvSTeyei92URkqU5Ak3"); // laptop
 pub mod presale {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, _presale_ref: String, start_time: u64, end_time: u64, tokens_per_sol: f64, min_buy: u32, max_buy: u32, tokens_available: u64) -> Result<()> {
+    pub fn initialize(ctx: Context<Initialize>, _presale_ref: String, start_time: u64, end_time: u64, tokens_per_sol: f64, min_buy: f32, max_buy: f32, tokens_available: u64) -> Result<()> {
         msg!("Initialising");
         msg!("_presale_ref {}", _presale_ref);
 
@@ -42,7 +42,7 @@ pub mod presale {
         Ok(())
     }
 
-    pub fn buy_tokens(ctx: Context<BuyTokens>, presale_ref: String, sol_lamports_amount: u64) -> Result<()> {
+    pub fn buy_tokens(ctx: Context<BuyTokens>, presale_ref: String, _buyer_ref: String, sol_lamports_amount: u64) -> Result<()> {
         msg!("BuyTokens");
         msg!("presale_ref {}", presale_ref);
 
@@ -67,8 +67,17 @@ pub mod presale {
         let sol_amount = lamports_to_sol(sol_lamports_amount);
 
         // check valid sol amount
-        require!(sol_amount >= presale_account.min_buy as f64, PresaleError::BuyAmountToLow);
-        require!(sol_amount <= presale_account.max_buy as f64, PresaleError::BuyAmountToHigh);
+        require!(sol_amount >= presale_account.min_buy, PresaleError::BuyAmountTooLow);
+        require!(sol_amount <= presale_account.max_buy, PresaleError::BuyAmountTooHigh);
+
+        // update buyer account
+        let buyer_account = &mut ctx.accounts.buyer_account;
+
+        msg!("buyer_account.total_spent before {}", buyer_account.total_spent);
+        buyer_account.total_spent += sol_amount;
+        require!(buyer_account.total_spent <= presale_account.max_buy, PresaleError::BuyAmountTooHigh);
+        msg!("buyer_account.total_spent after {}", buyer_account.total_spent);
+        msg!("presale_account.max_buy {}", presale_account.max_buy);
 
         // Create a transfer instruction from the buyer to the destination wallet
         let transfer_instruction = system_instruction::transfer(
@@ -134,13 +143,13 @@ pub mod presale {
     }
 }
 
-pub fn lamports_to_sol(lamports: u64) -> f64 {
-    lamports as f64 / 1_000_000_000.0
+pub fn lamports_to_sol(lamports: u64) -> f32 {
+    lamports as f32 / 1_000_000_000.0
 }
 
-fn sol_to_token(sol_amount: f64, tokens_per_sol: f64, decimal_places: u32) -> Option<u64> {
+fn sol_to_token(sol_amount: f32, tokens_per_sol: f64, decimal_places: u32) -> Option<u64> {
     let multiplier = 10u64.pow(decimal_places);
-    let token_amount = (sol_amount * tokens_per_sol).round() as u64;
+    let token_amount = (sol_amount as f64 * tokens_per_sol).round() as u64;
     token_amount.checked_mul(multiplier)
 }
 
@@ -194,11 +203,22 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(presale_ref: String, buyer_ref: String)] 
 pub struct BuyTokens<'info> {
     #[account(mut)]
     pub presale_account: Account<'info, PresaleAccount>,
     #[account(mut)]
     pub buyer: Signer<'info>,
+
+    /// CHECK: This is used to store the amount of 
+    #[account(
+        init_if_needed,
+        seeds = [presale_ref.as_bytes(), buyer_ref.as_bytes(), b"buyer_account".as_ref()], 
+        bump,
+        payer = buyer,
+        space = 8 + 32 + 8 + 8
+    )]
+    pub buyer_account: Account<'info, BuyerAccount>,
 
     /// CHECK: This account is only used to send tokens to the buyer
     #[account(mut)]
@@ -239,11 +259,17 @@ pub struct PresaleAccount {
     pub is_active: bool,
     pub destination_wallet_pubkey: Pubkey,
     pub tokens_per_sol: f64,
-    pub min_buy: u32,
-    pub max_buy: u32,
+    pub min_buy: f32,
+    pub max_buy: f32,
     pub tokens_available: u64,
     pub tokens_sold: u64,
-    pub amount_raised: f64,
+    pub amount_raised: f32,
+}
+
+#[account]
+pub struct BuyerAccount {
+    pub buyer_pubkey: Pubkey,
+    pub total_spent: f32,
 }
 
 #[error_code]
@@ -258,10 +284,10 @@ pub enum PresaleError {
     PresaleEnded,
     #[msg("Could not calculate the correct amount of tokens.")]
     OverflowError,
-    #[msg("Amount of SOL to small.")]
-    BuyAmountToLow,
-    #[msg("Amount of SOL to high.")]
-    BuyAmountToHigh,
+    #[msg("Purchase amount to low.")]
+    BuyAmountTooLow,
+    #[msg("Maximum purchase amount exceeded.")]
+    BuyAmountTooHigh,
     #[msg("Invalid destination wallet.")]
     InvalidDestinationWallet,
     // Include additional error types as necessary

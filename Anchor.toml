@@ -6,8 +6,8 @@ skip-lint = false
 
 [programs.localnet]
 # token2022 = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-presale = "9gvyTRdbRZpp7gY3DiyUHKMXg8QKH9U7rMg7ekbxRqS1" # laptop
-# presale = "GwrFvVJYaqPqoyDQvNYdr8a3ewvSTeyei92URkqU5Ak3" # office
+presale = "GwrFvVJYaqPqoyDQvNYdr8a3ewvSTeyei92URkqU5Ak3" # laptop
+# presale = "CUF1pNp3pxjFUVQCvFpuAVhv6uXfutZhPe8sSDwmkyXF" # office
 
 [registry]
 url = "https://api.apr.dev"
