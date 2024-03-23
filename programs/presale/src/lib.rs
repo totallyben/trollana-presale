@@ -5,7 +5,7 @@ use anchor_lang::solana_program::program::invoke;
 use anchor_spl::{
     token_2022::{Token2022, ID as TOKEN_2022_ID, TransferChecked},
     token_interface::{Mint, TokenAccount},
-    // associated_token::AssociatedToken,
+    associated_token::{AssociatedToken, Create},
 };
 
 declare_id!("GwrFvVJYaqPqoyDQvNYdr8a3ewvSTeyei92URkqU5Ak3"); // laptop
@@ -14,6 +14,8 @@ declare_id!("GwrFvVJYaqPqoyDQvNYdr8a3ewvSTeyei92URkqU5Ak3"); // laptop
 
 #[program]
 pub mod presale {
+    use anchor_spl::associated_token;
+
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>, _presale_ref: String, start_time: u64, end_time: u64, tokens_per_sol: f64, min_buy: f32, max_buy: f32, tokens_available: u64) -> Result<()> {
@@ -45,6 +47,23 @@ pub mod presale {
     pub fn buy_tokens(ctx: Context<BuyTokens>, presale_ref: String, _buyer_ref: String, sol_lamports_amount: u64) -> Result<()> {
         msg!("BuyTokens");
         msg!("presale_ref {}", presale_ref);
+
+        // create ata for buyer
+        let cpi_accounts = Create {
+            payer: ctx.accounts.buyer.to_account_info(),
+            associated_token: ctx.accounts.buyer_token_account.to_account_info(),
+            authority: ctx.accounts.buyer.to_account_info(),
+            mint: ctx.accounts.mint.to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+        };
+
+        let cpi_program = ctx.accounts.associated_token_program.to_account_info();
+
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+        associated_token::create(cpi_ctx)?;
+
+        msg!("ATA Address: {:?}", ctx.accounts.buyer_token_account);
 
         let presale_account = &mut ctx.accounts.presale_account;
 
@@ -210,7 +229,7 @@ pub struct BuyTokens<'info> {
     #[account(mut)]
     pub buyer: Signer<'info>,
 
-    /// CHECK: This is used to store the amount of 
+    /// CHECK: This is used to store the amount of sol spent so far
     #[account(
         init_if_needed,
         seeds = [presale_ref.as_bytes(), buyer_ref.as_bytes(), b"buyer_account".as_ref()], 
@@ -222,7 +241,7 @@ pub struct BuyTokens<'info> {
 
     /// CHECK: This account is only used to send tokens to the buyer
     #[account(mut)]
-    pub buyer_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub buyer_token_account: UncheckedAccount<'info>,
 
     #[account(
         mint::token_program = TOKEN_2022_ID,
@@ -241,6 +260,8 @@ pub struct BuyTokens<'info> {
     pub system_program: Program<'info, System>,
     #[account(address = TOKEN_2022_ID)]
     pub token_program: Program<'info, Token2022>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub rent: Sysvar<'info, Rent>,
     // #[account(address = AssociatedToken::id())]
     // pub associated_token_program: Program<'info, AssociatedToken>,
 }
