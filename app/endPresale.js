@@ -5,7 +5,7 @@ import bs58 from 'bs58';
 
 import { Connection, PublicKey, Keypair, clusterApiUrl } from '@solana/web3.js';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import {  TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import {  TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync } from '@solana/spl-token';
 import * as anchor from '@coral-xyz/anchor';
 import { AnchorProvider, Program, Wallet } from '@coral-xyz/anchor';
 
@@ -50,11 +50,6 @@ async function main() {
   const provider = new AnchorProvider(connection, ownerWallet, AnchorProvider.defaultOptions());
 
   const program = getProgram(provider);
-  // Define start and end time for the presale
-  const { BN } = anchor.default;
-
-  const startTime = Math.floor(Date.now() / 1000); // Current time in seconds
-  const endTime = startTime + 7 * 24 * 60 * 60; // One week from the start time
 
   const decodedBytes = bs58.decode(process.env.TOKEN_MINT_ADDRESS);
 
@@ -79,45 +74,34 @@ async function main() {
     program.programId
   );
 
-  let accountInfo = await program.provider.connection.getAccountInfo(presaleAccountPublicKey);
-
-  if (accountInfo) {
-    const presaleAccountData = await program.account.presaleAccount.fetch(presaleAccountPublicKey);
-    if (presaleAccountData.isInitialized) {
-      console.log('presaleAccountData.isInitialized', presaleAccountData.isInitialized);
-      console.log('presaleAccountData.destinationWalletPubkey', presaleAccountData.destinationWalletPubkey.toString());
-      console.log('tokenAccountPublicKey', tokenAccountPublicKey.toString());
-      return;
-    }
-  }
-
-  // const destinationWalletKeypairData = await loadKeypair(process.env.PRESALE_RECIPIENT_WALLET);
-  // const destinationWallet = Keypair.fromSecretKey(new Uint8Array(destinationWalletKeypairData));
-
   const destinationWallet = new PublicKey(process.env.PRESALE_RECIPIENT_WALLET_ADDRESS);
   const mint = new PublicKey(process.env.TOKEN_MINT_ADDRESS);
 
-  const tokensPerSol = 100000;
-  const minBuy = 1;
-  const maxBuy = 10;
-  const presaleTokensAvailable = 100000000;
-  
+  const destinationWalletTokenAccount = getAssociatedTokenAddressSync(
+    mint, 
+    destinationWallet,
+    false,
+    TOKEN_2022_PROGRAM_ID,
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+  );
+
   const tx = await program.methods
-    .initialize(presaleRef, new BN(startTime), new BN(endTime), tokensPerSol, minBuy, maxBuy, new BN(presaleTokensAvailable))
+    .endPresale(presaleRef)
     .accounts({
+      payer: ownerKeypair.publicKey,
       presaleAccount: presaleAccountPublicKey,
-      user: provider.wallet.publicKey,
-      systemProgram: anchor.web3.SystemProgram.programId,
-      tokenProgram: TOKEN_2022_PROGRAM_ID,
       tokenAccount: tokenAccountPublicKey,
       tokenAccountAuthority: tokenAuthorityPublicKey,
       destinationWallet: destinationWallet,
+      destinationWalletTokenAccount: destinationWalletTokenAccount,
+      systemProgram: anchor.web3.SystemProgram.programId,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
       mint: mint,
     })
-    .signers(ownerKeypair)
     .rpc();
 
-  console.log('Presale initialized successfully');
+  console.log('Presale ended successfully');
   console.log("Your transaction signature", tx);
   
   // Start polling to check if the initialization is complete
