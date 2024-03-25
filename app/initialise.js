@@ -78,6 +78,11 @@ async function main() {
     [Buffer.from(presaleRef), Buffer.from('token_account_authority')],
     program.programId
   );
+  
+  const [proceedsVaultPublicKey] = PublicKey.findProgramAddressSync(
+    [Buffer.from(presaleRef), Buffer.from('proceeds_vault')],
+    program.programId
+  );
 
   let accountInfo = await program.provider.connection.getAccountInfo(presaleAccountPublicKey);
 
@@ -101,11 +106,13 @@ async function main() {
   const minBuy = 1;
   const maxBuy = 10;
   const presaleTokensAvailable = 100000000;
+  const feePercent = 3;
   
   const tx = await program.methods
-    .initialize(presaleRef, new BN(startTime), new BN(endTime), tokensPerSol, minBuy, maxBuy, new BN(presaleTokensAvailable))
+    .initialize(presaleRef, new BN(startTime), new BN(endTime), tokensPerSol, feePercent, minBuy, maxBuy, new BN(presaleTokensAvailable))
     .accounts({
       presaleAccount: presaleAccountPublicKey,
+      proceedsVault: proceedsVaultPublicKey,
       user: provider.wallet.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
