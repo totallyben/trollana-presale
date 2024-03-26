@@ -77,7 +77,6 @@ reset () {
   output="$(node app/initialise.js)" 
   tokenAccountPublicKey=$(echo "$output" | grep 'tokenAccountPublicKey' | awk '{print $2}')
   echo "tokenAccountPublicKey ${tokenAccountPublicKey}"
-
   sed -i "s/^TOKEN_ACCOUNT_PUBLIC_KEY=.*/TOKEN_ACCOUNT_PUBLIC_KEY=${tokenAccountPublicKey}/" ${ANCHOR_DOT_ENV}
   
   . ${ANCHOR_DOT_ENV}

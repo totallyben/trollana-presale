@@ -5,7 +5,7 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-presale = "HVfT7ByV4Toz7drWpUQpUJXU4NE4xj6aC5kHFYPyoAwT"
+presale = "AtFh34ewcFEv5KuuBcd6iNrEp7ok9n1JM5rVeWVBPovs"
 
 [programs.devnet]
 presale = "HVfT7ByV4Toz7drWpUQpUJXU4NE4xj6aC5kHFYPyoAwT"

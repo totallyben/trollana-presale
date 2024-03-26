@@ -68,7 +68,7 @@ async function main() {
     [Buffer.from(presaleRef), Buffer.from('presale_account')],
     program.programId
   );
-  
+
   const [tokenAccountPublicKey] = PublicKey.findProgramAddressSync(
     [Buffer.from(presaleRef), Buffer.from('token_account')],
     program.programId
@@ -99,7 +99,7 @@ async function main() {
   // const destinationWalletKeypairData = await loadKeypair(process.env.PRESALE_RECIPIENT_WALLET);
   // const destinationWallet = Keypair.fromSecretKey(new Uint8Array(destinationWalletKeypairData));
 
-  const destinationWallet = new PublicKey(process.env.PRESALE_RECIPIENT_WALLET_ADDRESS);
+  const recipientWallet = new PublicKey(process.env.PRESALE_RECIPIENT_WALLET_ADDRESS);
   const mint = new PublicKey(process.env.TOKEN_MINT_ADDRESS);
 
   const tokensPerSol = 100000;
@@ -118,7 +118,7 @@ async function main() {
       tokenProgram: TOKEN_2022_PROGRAM_ID,
       tokenAccount: tokenAccountPublicKey,
       tokenAccountAuthority: tokenAuthorityPublicKey,
-      destinationWallet: destinationWallet,
+      recipientWallet: recipientWallet,
       mint: mint,
     })
     .signers(ownerKeypair)

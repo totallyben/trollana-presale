@@ -25,6 +25,16 @@ function getProgram(provider) {
   return new Program(idl, programId, provider);
 }
 
+function refFromKey(key) {
+  if (!key || key === undefined) {
+    return '';
+  }
+  console.log('key', key);
+  const decodedBytes = bs58.decode(key);
+  const firstTenBytes = decodedBytes.slice(0, 10);
+  return bs58.encode(firstTenBytes);
+}
+
 async function main() {
 
   const network = process.env.SOLANA_NETWORK || 'Mainnet';
@@ -56,11 +66,19 @@ async function main() {
   const firstTenBytes = decodedBytes.slice(0, 10);
   const presaleRef = bs58.encode(firstTenBytes); 
 
+
+  const buyerRef = refFromKey(ownerKeypair.publicKey.toString());
   console.log('presaleRef', presaleRef);
+  console.log('buyerRef', buyerRef);
   // return;
   
   const [presaleAccountPublicKey] = PublicKey.findProgramAddressSync(
     [Buffer.from(presaleRef), Buffer.from('presale_account')],
+    program.programId
+  );
+    
+  const [buyerAccountPublicKey] = PublicKey.findProgramAddressSync(
+    [Buffer.from(presaleRef), Buffer.from(buyerRef), Buffer.from('buyer_account')],
     program.programId
   );
   
@@ -79,75 +97,55 @@ async function main() {
     program.programId
   );
 
-  const recipientWallet = new PublicKey(process.env.PRESALE_RECIPIENT_WALLET_ADDRESS);
+  const destinationWallet = new PublicKey(process.env.PRESALE_RECIPIENT_WALLET_ADDRESS);
   const mint = new PublicKey(process.env.TOKEN_MINT_ADDRESS);
 
-  const recipientWalletTokenAccount = getAssociatedTokenAddressSync(
+  const destinationWalletTokenAccount = getAssociatedTokenAddressSync(
     mint, 
-    recipientWallet,
+    destinationWallet,
     false,
     TOKEN_2022_PROGRAM_ID,
     ASSOCIATED_TOKEN_PROGRAM_ID,
   );
 
-  console.log(process.env.PRESALE_RECIPIENT_WALLET_ADDRESS);
+  const presaleAccountData = await program.account.presaleAccount.fetch(presaleAccountPublicKey);
+
+  console.log(presaleAccountData.num_sales);
+
+  const numSales = presaleAccountData.num_sales || 0;
+  console.log('presaleAccountData.numSales', presaleAccountData.numSales);
+  console.log('numSales', numSales);
+
+  // Convert num_sales (assuming it's a u32) to a byte array in little-endian format
+  const numSalesBuffer = Buffer.alloc(4); // 4 bytes for u32
+  numSalesBuffer.writeUInt32LE(presaleAccountData.numSales, 0);
+
+  const [purchaseReceiptPublicKey] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from(presaleRef),
+      numSalesBuffer,
+      Buffer.from('purchase_receipt'),
+    ],
+    program.programId
+  );
+
+  const { BN } = anchor.default;
+  const solAmountLamports = new BN(anchor.web3.LAMPORTS_PER_SOL * Number(1.5));
+
   const tx = await program.methods
-    .end(presaleRef)
+    .buyTokens(presaleRef, buyerRef, solAmountLamports)
     .accounts({
-      payer: ownerKeypair.publicKey,
       presaleAccount: presaleAccountPublicKey,
+      buyer: ownerKeypair.publicKey,
+      buyerAccount: buyerAccountPublicKey,
       proceedsVault: proceedsVaultPublicKey,
-      tokenAccount: tokenAccountPublicKey,
-      tokenAccountAuthority: tokenAuthorityPublicKey,
-      recipientWallet: recipientWallet,
-      recipientWalletTokenAccount: recipientWalletTokenAccount,
+      purchaseReceipt: purchaseReceiptPublicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
-      tokenProgram: TOKEN_2022_PROGRAM_ID,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-      mint: mint,
     })
     .rpc();
 
   console.log('Presale ended successfully');
   console.log("Your transaction signature", tx);
-  
-  // Start polling to check if the initialization is complete
-  await pollForInitialization(program, presaleAccountPublicKey, tokenAccountPublicKey);
-}
-
-async function pollForInitialization(program, presaleAccountPublicKey, tokenAccountPublicKey) {
-  const maxAttempts = 30; // Maximum number of attempts
-  const interval = 2000; // Poll every 2000 milliseconds (2 seconds)
-
-  let attempts = 0;
-
-  return new Promise((resolve, reject) => {
-    const intervalId = setInterval(async () => {
-      if (attempts >= maxAttempts) {
-        clearInterval(intervalId);
-        reject(new Error("Polling for initialization timed out"));
-        return;
-      }
-
-      try {
-        let accountInfo = await program.provider.connection.getAccountInfo(presaleAccountPublicKey);
-        if (accountInfo) {
-          const presaleAccountData = await program.account.presaleAccount.fetch(presaleAccountPublicKey);
-          if (presaleAccountData.isInitialized) {
-            clearInterval(intervalId);
-            console.log('Initialization confirmed');
-            console.log('tokenAccountPublicKey', tokenAccountPublicKey.toString());
-            resolve();
-          }
-        }
-      } catch (error) {
-        clearInterval(intervalId);
-        reject(error);
-      }
-
-      attempts++;
-    }, interval);
-  });
 }
 
 main()
