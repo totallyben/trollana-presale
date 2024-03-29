@@ -68,7 +68,7 @@ async function main() {
     [Buffer.from(presaleRef), Buffer.from('presale_account')],
     program.programId
   );
-  
+
   const [tokenAccountPublicKey] = PublicKey.findProgramAddressSync(
     [Buffer.from(presaleRef), Buffer.from('token_account')],
     program.programId
@@ -76,6 +76,11 @@ async function main() {
   
   const [tokenAuthorityPublicKey] = PublicKey.findProgramAddressSync(
     [Buffer.from(presaleRef), Buffer.from('token_account_authority')],
+    program.programId
+  );
+  
+  const [proceedsVaultPublicKey] = PublicKey.findProgramAddressSync(
+    [Buffer.from(presaleRef), Buffer.from('proceeds_vault')],
     program.programId
   );
 
@@ -94,24 +99,26 @@ async function main() {
   // const destinationWalletKeypairData = await loadKeypair(process.env.PRESALE_RECIPIENT_WALLET);
   // const destinationWallet = Keypair.fromSecretKey(new Uint8Array(destinationWalletKeypairData));
 
-  const destinationWallet = new PublicKey(process.env.PRESALE_RECIPIENT_WALLET_ADDRESS);
+  const recipientWallet = new PublicKey(process.env.PRESALE_RECIPIENT_WALLET_ADDRESS);
   const mint = new PublicKey(process.env.TOKEN_MINT_ADDRESS);
 
   const tokensPerSol = 100000;
   const minBuy = 1;
   const maxBuy = 10;
   const presaleTokensAvailable = 100000000;
+  const feePercent = 3;
   
   const tx = await program.methods
-    .initialize(presaleRef, new BN(startTime), new BN(endTime), tokensPerSol, minBuy, maxBuy, new BN(presaleTokensAvailable))
+    .initialize(presaleRef, new BN(startTime), new BN(endTime), tokensPerSol, feePercent, minBuy, maxBuy, new BN(presaleTokensAvailable))
     .accounts({
       presaleAccount: presaleAccountPublicKey,
+      proceedsVault: proceedsVaultPublicKey,
       user: provider.wallet.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
       tokenAccount: tokenAccountPublicKey,
       tokenAccountAuthority: tokenAuthorityPublicKey,
-      destinationWallet: destinationWallet,
+      recipientWallet: recipientWallet,
       mint: mint,
     })
     .signers(ownerKeypair)
