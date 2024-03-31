@@ -52,6 +52,19 @@ pub mod presale {
         Ok(())
     }
 
+    pub fn update_start_end(
+        ctx: Context<UpdateStartEnd>,
+        start_time: u64,
+        end_time: u64,
+    ) -> Result<()> {    
+        let presale_account = &mut ctx.accounts.presale_account;
+    
+        presale_account.start_time = start_time;
+        presale_account.end_time = end_time;
+    
+        Ok(())
+    }
+
     pub fn buy_tokens(ctx: Context<BuyTokens>, _presale_ref: String, _buyer_ref: String, sol_lamports_amount: u64) -> Result<()> {
         let presale_account = &mut ctx.accounts.presale_account;
 
@@ -241,6 +254,14 @@ pub struct Initialize<'info> {
     pub system_program: Program<'info, System>,
     #[account(address = TOKEN_2022_ID)]
     pub token_program: Program<'info, Token2022>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateStartEnd<'info> {
+    #[account(mut)]
+    pub presale_account: Account<'info, PresaleAccount>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
 }
 
 #[derive(Accounts)]
