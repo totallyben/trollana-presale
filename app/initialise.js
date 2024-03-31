@@ -102,10 +102,10 @@ async function main() {
   const recipientWallet = new PublicKey(process.env.PRESALE_RECIPIENT_WALLET_ADDRESS);
   const mint = new PublicKey(process.env.TOKEN_MINT_ADDRESS);
 
-  const tokensPerSol = 100000;
-  const minBuy = 1;
-  const maxBuy = 10;
-  const presaleTokensAvailable = 100000000;
+  const tokensPerSol = 1000000;
+  const minBuy = 0.3;
+  const maxBuy = 5;
+  const presaleTokensAvailable = 300000000;
   const feePercent = 3;
   
   const tx = await program.methods

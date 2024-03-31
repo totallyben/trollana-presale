@@ -8,7 +8,7 @@ use anchor_spl::{
     associated_token::{AssociatedToken, Create},
 };
 
-declare_id!("4MFUeSPBzux3EqM6Ltv27o3YUbyAhwTnWLE4QRnBVyYH");
+declare_id!("HmaGgT6pQHRC9X8XAjCojM9LLoPkdQCbR5YUNqyjji2t");
 
 #[program]
 pub mod presale {
@@ -27,7 +27,6 @@ pub mod presale {
         max_buy: f32,
         tokens_available: u64,
     ) -> Result<()> {    
-        msg!("initialising presale {}", _presale_ref);
         let presale_account = &mut ctx.accounts.presale_account;
     
         presale_account.is_initialized = true;
@@ -44,7 +43,7 @@ pub mod presale {
         presale_account.tokens_available = tokens_available;
         presale_account.tokens_sold = 0;
         presale_account.amount_raised = 0.0;
-        presale_account.num_sales = 0;
+        // presale_account.num_sales = 0;
         presale_account.tokens_distributed = false;
     
         // let buyer_registry = &mut ctx.accounts.buyer_registry;
@@ -74,6 +73,12 @@ pub mod presale {
         require!(sol_amount >= presale_account.min_buy, PresaleError::BuyAmountTooLow);
         require!(sol_amount <= presale_account.max_buy, PresaleError::BuyAmountTooHigh);
 
+        let token_amount_without_decimal = token_amount_without_decimal(tokens_purchased, 9);
+        presale_account.tokens_sold += token_amount_without_decimal;
+        presale_account.amount_raised += sol_amount;
+        // presale_account.num_sales += 1;
+        require!(presale_account.tokens_sold <= presale_account.tokens_available, PresaleError::NotEnoughTokensLeft);
+
         // update buyer account
         let buyer_account = &mut ctx.accounts.buyer_account;
         buyer_account.total_spend += sol_amount;
@@ -102,15 +107,9 @@ pub mod presale {
                 ctx.accounts.system_program.to_account_info().clone(),
             ],
         )?;
-        msg!("Completed transfer of {} SOL from recipient wallet", sol_amount);
-
-        let token_amount_without_decimal = token_amount_without_decimal(tokens_purchased, 9);
-
-        presale_account.tokens_sold += token_amount_without_decimal;
-        presale_account.amount_raised += sol_amount;
-        presale_account.num_sales += 1;
-        msg!("receipt: token={}, buyer={}, spend={}, tokens={}", presale_account.token_mint_address.key().to_string(), buyer.key().to_string(), sol_amount, token_amount_without_decimal);
-        msg!("presaleInfo: token={}, sales={}, amountRaised={}", presale_account.token_mint_address.key().to_string(), presale_account.num_sales, presale_account.amount_raised);
+        
+        msg!("receipt: token={}, buyer={}, spend={}, tokens={}", presale_account.token_mint_address.to_string(), buyer.key().to_string(), sol_amount, token_amount_without_decimal);
+        // msg!("presaleInfo: token={}, sales={}, amountRaised={}", presale_account.token_mint_address.key().to_string(), presale_account.num_sales, presale_account.amount_raised);
 
         Ok(())
     }
@@ -151,7 +150,7 @@ pub mod presale {
         ];
         let signer_seeds = &[&new_seeds[..]];
 
-        msg!("initiating transfer of remaining {} tokens to recipient wallet", tokens_remaining);
+        // msg!("initiating transfer of remaining {} tokens to recipient wallet", tokens_remaining);
         anchor_spl::token_2022::transfer_checked(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
@@ -166,11 +165,11 @@ pub mod presale {
             tokens_remaining,
             9,
         )?;
-        msg!("completed transfer of {} tokens to recipient wallet", tokens_remaining);
+        // msg!("completed transfer of {} tokens to recipient wallet", tokens_remaining);
 
         presale_account.is_active = false;
 
-        msg!("presale {} no longer active", presale_ref);
+        // msg!("presale {} no longer active", presale_ref);
 
         Ok(())
     }
@@ -313,7 +312,7 @@ pub struct PresaleAccount {
     pub tokens_available: u64,
     pub tokens_sold: u64,
     pub amount_raised: f32,
-    pub num_sales: u32,
+    // pub num_sales: u32,
     pub tokens_distributed: bool,
 }
 
@@ -340,6 +339,8 @@ pub enum PresaleError {
     BuyAmountTooLow,
     #[msg("Maximum purchase amount exceeded.")]
     BuyAmountTooHigh,
+    #[msg("Not enough presale tokens remaining.")]
+    NotEnoughTokensLeft,
     #[msg("Invalid destination wallet.")]
     InvalidDestinationWallet,
     // Include additional error types as necessary
