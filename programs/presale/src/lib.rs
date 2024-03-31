@@ -58,6 +58,8 @@ pub mod presale {
         end_time: u64,
     ) -> Result<()> {    
         let presale_account = &mut ctx.accounts.presale_account;
+
+        require!(ctx.accounts.payer.key() == presale_account.owner.key(), PresaleError::IllegalOwner);
     
         presale_account.start_time = start_time;
         presale_account.end_time = end_time;
@@ -130,6 +132,8 @@ pub mod presale {
     pub fn end_presale(ctx: Context<EndPresale>, presale_ref: String) -> Result<()> {
         msg!("end presale {}", presale_ref);
         let presale_account = &mut ctx.accounts.presale_account;
+
+        require!(ctx.accounts.payer.key() == presale_account.owner.key(), PresaleError::IllegalOwner);
 
         require!(presale_account.is_active, PresaleError::PresaleNotActive);
 
@@ -364,5 +368,7 @@ pub enum PresaleError {
     NotEnoughTokensLeft,
     #[msg("Invalid destination wallet.")]
     InvalidDestinationWallet,
+    #[msg("Ilegal owner.")]
+    IllegalOwner
     // Include additional error types as necessary
 }
