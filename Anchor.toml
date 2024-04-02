@@ -11,13 +11,13 @@ presale = "5GLrJSNnMrNdE9dCFNDAR7diy6eqTCfwXX6Vcxwd4LjD"
 presale = "HmaGgT6pQHRC9X8XAjCojM9LLoPkdQCbR5YUNqyjji2t"
 
 [programs.mainnet]
-presale = "HmaGgT6pQHRC9X8XAjCojM9LLoPkdQCbR5YUNqyjji2t"
+presale = "GsCxH6eCq3SA4vviHo4ED4GzrC2CdiSgCfiCb4t2TupQ"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "mainnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
