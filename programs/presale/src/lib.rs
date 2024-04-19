@@ -6,11 +6,11 @@ use anchor_spl::{
     // token_2022::{Token2022, ID as TOKEN_2022_ID, TransferChecked},
     token_2022::{Token2022, ID as TOKEN_2022_ID},
     token_interface::{Mint, TokenAccount},
-    associated_token::AssociatedToken,
+    // associated_token::AssociatedToken,
     // associated_token::{AssociatedToken, Create},
 };
 
-declare_id!("GsCxH6eCq3SA4vviHo4ED4GzrC2CdiSgCfiCb4t2TupQ");
+declare_id!("EJmaTQvanPtAhj3Ehv5ZboCnrGtNraMqK4qnPBJio9Eo");
 
 #[program]
 pub mod presale {
@@ -46,7 +46,7 @@ pub mod presale {
         presale_account.tokens_sold = 0;
         presale_account.amount_raised = 0.0;
         // presale_account.num_sales = 0;
-        presale_account.tokens_distributed = false;
+        // presale_account.tokens_distributed = false;
     
         // let buyer_registry = &mut ctx.accounts.buyer_registry;
         // buyer_registry.buyers = Vec::new();
@@ -54,20 +54,20 @@ pub mod presale {
         Ok(())
     }
 
-    // pub fn update_start_end(
-    //     ctx: Context<UpdateStartEnd>,
-    //     start_time: u64,
-    //     end_time: u64,
-    // ) -> Result<()> {    
-    //     let presale_account = &mut ctx.accounts.presale_account;
+    pub fn update_start_end(
+        ctx: Context<UpdateStartEnd>,
+        start_time: u64,
+        end_time: u64,
+    ) -> Result<()> {    
+        let presale_account = &mut ctx.accounts.presale_account;
 
-    //     require!(ctx.accounts.payer.key() == presale_account.owner.key(), PresaleError::IllegalOwner);
+        require!(ctx.accounts.payer.key() == presale_account.owner.key(), PresaleError::IllegalOwner);
     
-    //     presale_account.start_time = start_time;
-    //     presale_account.end_time = end_time;
+        presale_account.start_time = start_time;
+        presale_account.end_time = end_time;
     
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
     pub fn buy_tokens(ctx: Context<BuyTokens>, _presale_ref: String, _buyer_ref: String, sol_lamports_amount: u64) -> Result<()> {
         let presale_account = &mut ctx.accounts.presale_account;
@@ -100,7 +100,6 @@ pub mod presale {
         let buyer_account = &mut ctx.accounts.buyer_account;
         buyer_account.total_spend += sol_amount;
         buyer_account.tokens_purchased = tokens_purchased;
-
 
         let destination_wallet = &ctx.accounts.destination_wallet;
 
@@ -135,7 +134,7 @@ pub mod presale {
         msg!("end presale {}", presale_ref);
         let presale_account = &mut ctx.accounts.presale_account;
 
-        // require!(ctx.accounts.payer.key() == presale_account.owner.key(), PresaleError::IllegalOwner);
+        require!(ctx.accounts.payer.key() == presale_account.owner.key(), PresaleError::IllegalOwner);
 
         require!(presale_account.is_active, PresaleError::PresaleNotActive);
 
@@ -262,13 +261,13 @@ pub struct Initialize<'info> {
     pub token_program: Program<'info, Token2022>,
 }
 
-// #[derive(Accounts)]
-// pub struct UpdateStartEnd<'info> {
-//     #[account(mut)]
-//     pub presale_account: Account<'info, PresaleAccount>,
-//     #[account(mut)]
-//     pub payer: Signer<'info>,
-// }
+#[derive(Accounts)]
+pub struct UpdateStartEnd<'info> {
+    #[account(mut)]
+    pub presale_account: Account<'info, PresaleAccount>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+}
 
 #[derive(Accounts)]
 #[instruction(presale_ref: String, buyer_ref: String)] 
@@ -301,26 +300,26 @@ pub struct EndPresale<'info> {
     pub payer: Signer<'info>,
     #[account(mut)]
     pub presale_account: Account<'info, PresaleAccount>,
-    /// CHECK: This account is only used to send unsold tokens to
-    #[account(mut)]
-    pub destination_wallet: AccountInfo<'info>,
-    /// CHECK: This account is only used to send tokens to the buyer
-    #[account(mut)]
-    pub destination_wallet_token_account: UncheckedAccount<'info>,
-    /// CHECK: This account is only used to send tokens to the buyer
-    #[account(mut)]
-    pub token_account: InterfaceAccount<'info, TokenAccount>,
-    /// CHECK: This account is used to as the authority on the 
-    #[account(mut)]
-    pub token_account_authority: AccountInfo<'info>,
-    #[account(address = TOKEN_2022_ID)]
-    pub token_program: Program<'info, Token2022>,
-    #[account(
-        mint::token_program = TOKEN_2022_ID,
-    )]
-    pub mint: InterfaceAccount<'info, Mint>,
-    pub system_program: Program<'info, System>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
+    // /// CHECK: This account is only used to send unsold tokens to
+    // #[account(mut)]
+    // pub destination_wallet: AccountInfo<'info>,
+    // /// CHECK: This account is only used to send tokens to the buyer
+    // #[account(mut)]
+    // pub destination_wallet_token_account: UncheckedAccount<'info>,
+    // /// CHECK: This account is only used to send tokens to the buyer
+    // #[account(mut)]
+    // pub token_account: InterfaceAccount<'info, TokenAccount>,
+    // /// CHECK: This account is used to as the authority on the 
+    // #[account(mut)]
+    // pub token_account_authority: AccountInfo<'info>,
+    // #[account(address = TOKEN_2022_ID)]
+    // pub token_program: Program<'info, Token2022>,
+    // #[account(
+    //     mint::token_program = TOKEN_2022_ID,
+    // )]
+    // pub mint: InterfaceAccount<'info, Mint>,
+    // pub system_program: Program<'info, System>,
+    // pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 #[account]
@@ -340,7 +339,7 @@ pub struct PresaleAccount {
     pub tokens_sold: u64,
     pub amount_raised: f32,
     // pub num_sales: u32,
-    pub tokens_distributed: bool,
+    // pub tokens_distributed: bool,
 }
 
 #[account]
