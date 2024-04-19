@@ -5,7 +5,7 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-presale = "EJmaTQvanPtAhj3Ehv5ZboCnrGtNraMqK4qnPBJio9Eo"
+presale = "7ovz8eTEuHtXsURXevnRmsmim64STrfQVGxdvSszWJZR"
 
 [programs.devnet]
 presale = "HmaGgT6pQHRC9X8XAjCojM9LLoPkdQCbR5YUNqyjji2t"
@@ -17,7 +17,7 @@ presale = "EJmaTQvanPtAhj3Ehv5ZboCnrGtNraMqK4qnPBJio9Eo"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "mainnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

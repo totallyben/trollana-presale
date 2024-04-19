@@ -70,7 +70,7 @@ reset () {
   
   cd ${ANCHOR_WORKSPACE}
   anchor build
-  anchor deploy
+  solana program deploy target/deploy/presale.so
   rsync -avz ${ANCHOR_WORKSPACE}/target/types/presale.ts ${DAPP_WORKSPACE}/idl/presale.ts
 
   echo "Initialising..."

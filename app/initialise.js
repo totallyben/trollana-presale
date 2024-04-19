@@ -20,9 +20,7 @@ async function loadKeypair(wallet) {
 }
 
 function getProgram(provider) {
-  console.log(process.env.PRESALE_PROGRAM_ID);
-  const programId = new PublicKey(process.env.PRESALE_PROGRAM_ID);
-  return new Program(idl, programId, provider);
+  return new Program(idl, provider);
 }
 
 async function main() {
@@ -116,7 +114,7 @@ async function main() {
     .accounts({
       presaleAccount: presaleAccountPublicKey,
       proceedsVault: proceedsVaultPublicKey,
-      user: provider.wallet.publicKey,
+      // user: provider.wallet.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
       tokenAccount: tokenAccountPublicKey,
