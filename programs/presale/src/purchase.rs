@@ -46,6 +46,8 @@ pub fn buy(
     buyer_account.total_spend += sol_amount;
     buyer_account.tokens_purchased = tokens_purchased;
 
+    require!(buyer_account.total_spend <= presale_account.max_buy, PresaleError::BuyAmountTooHigh);
+
     let destination_wallet = &ctx.accounts.destination_wallet;
     let fee_wallet = &ctx.accounts.fee_wallet;
 

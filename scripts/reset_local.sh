@@ -81,6 +81,9 @@ reset () {
   rsync -avz ${ANCHOR_WORKSPACE}/target/idl/presale.json ${DAPP_WORKSPACE}/idl/presale.json
 
   sed -i "s/export type Presale =/export const IDL: Presale =/" ${DAPP_WORKSPACE}/idl/presaleIdl.ts
+  echo "" >> ${DAPP_WORKSPACE}/idl/presale.ts
+  cat ${DAPP_WORKSPACE}/idl/presaleIdl.ts >> ${DAPP_WORKSPACE}/idl/presale.ts
+  rm ${DAPP_WORKSPACE}/idl/presaleIdl.ts
 
   echo "Initialising..."
   output="$(node app/initialise.js)" 
