@@ -5,6 +5,7 @@ solana config set -u l
 WALLET_DIR=~/workspace/solana/wallets
 BUYER_WALLET=${WALLET_DIR}/presale-buyer.json
 RECIPIENT_WALLET=${WALLET_DIR}/presale-recipient.json
+FEE_WALLET=${WALLET_DIR}/presale-fee.json
 ANCHOR_WORKSPACE=/home/gritzb/workspace/solana/trollana-presale
 ANCHOR_DOT_ENV=${ANCHOR_WORKSPACE}/.env
 ANCHOR_TOML=${ANCHOR_WORKSPACE}/Anchor.toml
@@ -14,8 +15,10 @@ reset_wallets () {
   rm -rf ${BUYER_WALLET} ${RECIPIENT_WALLET}
   solana-keygen new --outfile ${BUYER_WALLET}
   solana-keygen new --outfile ${RECIPIENT_WALLET}
+  solana-keygen new --outfile ${FEE_WALLET}
   solana airdrop 1000 ${RECIPIENT_WALLET}
   solana airdrop 1000 ${BUYER_WALLET}
+  solana airdrop 1000 ${FEE_WALLET}
 }
 
 generate_token () {
@@ -28,9 +31,11 @@ generate_token () {
 
 update_dot_envs() {
   recipient_pubkey=$(solana-keygen pubkey ${RECIPIENT_WALLET})
+  fee_pubkey=$(solana-keygen pubkey ${FEE_WALLET})
   
   sed -i "s/^SOLANA_NETWORK=.*/SOLANA_NETWORK=Localnet/" ${ANCHOR_DOT_ENV}
   sed -i "s/^PRESALE_RECIPIENT_WALLET_ADDRESS=.*/PRESALE_RECIPIENT_WALLET_ADDRESS=${recipient_pubkey}/" ${ANCHOR_DOT_ENV}
+  sed -i "s/^PRESALE_FEE_WALLET_ADDRESS=.*/PRESALE_FEE_WALLET_ADDRESS=${fee_pubkey}/" ${ANCHOR_DOT_ENV}
   sed -i "s/^TOKEN_MINT_ADDRESS=.*/TOKEN_MINT_ADDRESS=${TOKEN_MINT_ADDRESS}/" ${ANCHOR_DOT_ENV}
 }
 
@@ -72,6 +77,10 @@ reset () {
   anchor build
   solana program deploy target/deploy/presale.so
   rsync -avz ${ANCHOR_WORKSPACE}/target/types/presale.ts ${DAPP_WORKSPACE}/idl/presale.ts
+  rsync -avz ${ANCHOR_WORKSPACE}/target/types/presale.ts ${DAPP_WORKSPACE}/idl/presaleIdl.ts
+  rsync -avz ${ANCHOR_WORKSPACE}/target/idl/presale.json ${DAPP_WORKSPACE}/idl/presale.json
+
+  sed -i "s/export type Presale =/export const IDL: Presale =/" ${DAPP_WORKSPACE}/idl/presaleIdl.ts
 
   echo "Initialising..."
   output="$(node app/initialise.js)" 

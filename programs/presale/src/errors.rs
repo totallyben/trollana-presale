@@ -20,6 +20,8 @@ pub enum PresaleError {
     NotEnoughTokensLeft,
     #[msg("Invalid destination wallet.")]
     InvalidDestinationWallet,
+    #[msg("Invalid fee wallet.")]
+    InvalidFeeWallet,
     #[msg("Tokens have not been distributed yet.")]
     TokensNotDistributed,
     #[msg("Illegal owner.")]

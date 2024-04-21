@@ -47,15 +47,29 @@ pub fn buy(
     buyer_account.tokens_purchased = tokens_purchased;
 
     let destination_wallet = &ctx.accounts.destination_wallet;
+    let fee_wallet = &ctx.accounts.fee_wallet;
 
     // destination wallet must match
     require!(destination_wallet.key.to_string() == presale_account.recipient_wallet.to_string(), PresaleError::InvalidDestinationWallet);
+
+    // fee wallet must match
+    require!(fee_wallet.key.to_string() == presale_account.fee_wallet.to_string(), PresaleError::InvalidFeeWallet);
+
+    // Calculate the fee in lamports
+    let fee = (sol_lamports_amount as f64) * (presale_account.fee_percent as f64 / 100.0);
+    let fee_lamports = fee as u64;  // Convert the fee to u64, rounding down to nearest lamport
+
+    // Calculate the amount after fee
+    let amount_after_fee = sol_lamports_amount - fee_lamports;
+
+    // Store the calculated fee in a variable if needed elsewhere
+    let fee_to_transfer = fee_lamports;
 
     // Create a transfer instruction from the buyer to the destination wallet
     let transfer_instruction = system_instruction::transfer(
         &buyer.key(),
         &destination_wallet.key(),
-        sol_lamports_amount,
+        amount_after_fee,
     );
 
     // Invoke the transfer instruction
@@ -65,6 +79,26 @@ pub fn buy(
         &[
             buyer.to_account_info().clone(),
             destination_wallet.to_account_info().clone(),
+            ctx.accounts.system_program.to_account_info().clone(),
+        ],
+    )?;
+
+
+
+    // Create a transfer instruction from the buyer to the fee wallet
+    let transfer_instruction = system_instruction::transfer(
+        &buyer.key(),
+        &fee_wallet.key(),
+        fee_to_transfer,
+    );
+
+    // Invoke the transfer instruction
+    // msg!("Initiating transfer of {} SOL to recipient wallet", sol_amount);
+    invoke(
+        &transfer_instruction,
+        &[
+            buyer.to_account_info().clone(),
+            fee_wallet.to_account_info().clone(),
             ctx.accounts.system_program.to_account_info().clone(),
         ],
     )?;
@@ -96,6 +130,10 @@ pub struct BuyTokens<'info> {
     /// CHECK: This account is only used to send SOL to
     #[account(mut)]
     pub destination_wallet: AccountInfo<'info>,
+
+    /// CHECK: This account is only used to send fees to
+    #[account(mut)]
+    pub fee_wallet: AccountInfo<'info>,
 
     pub system_program: Program<'info, System>,
 }

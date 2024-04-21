@@ -9,6 +9,7 @@ pub struct PresaleAccount {
     pub end_time: u64,
     pub is_active: bool,
     pub recipient_wallet: Pubkey,
+    pub fee_wallet: Pubkey,
     pub tokens_per_sol: f64,
     pub fee_percent: f32,
     pub min_buy: f32,

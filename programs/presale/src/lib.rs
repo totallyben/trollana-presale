@@ -21,7 +21,7 @@ pub use purchase::*;
 pub mod end;
 pub use end::*;
 
-declare_id!("7ovz8eTEuHtXsURXevnRmsmim64STrfQVGxdvSszWJZR");
+declare_id!("C9pV31WQ6AgBWh2bbujmGSPvvEZLQsdgrCQxJf17rw98");
 
 #[program]
 pub mod presale {

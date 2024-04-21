@@ -49,17 +49,17 @@ async function main() {
 
   const program = getProgram(provider);
 
-  const tokensPerSol = 1000000;
-  const minBuy = 0.3;
-  const maxBuy = 5;
-  const presaleTokensAvailable = 300000000;
+  const tokensPerSol = 200000;
+  const minBuy = 0.1;
+  const maxBuy = 2;
+  const presaleTokensAvailable = 20000000;
   const feePercent = 3;
 
   // Define start and end time for the presale
   const { BN } = anchor.default;
 
   const startDate = new Date("2024-04-02T18:00:00Z");
-  const endDate = new Date("2024-04-09T17:59:59Z");
+  const endDate = new Date("2024-04-25T18:00:00Z");
   const startTime = Math.floor(startDate / 1000); 
   const endTime = Math.floor(endDate / 1000);
 
@@ -107,6 +107,7 @@ async function main() {
   // const destinationWallet = Keypair.fromSecretKey(new Uint8Array(destinationWalletKeypairData));
 
   const recipientWallet = new PublicKey(process.env.PRESALE_RECIPIENT_WALLET_ADDRESS);
+  const feeWallet = new PublicKey(process.env.PRESALE_FEE_WALLET_ADDRESS);
   const mint = new PublicKey(process.env.TOKEN_MINT_ADDRESS);
   
   const tx = await program.methods
@@ -120,6 +121,7 @@ async function main() {
       tokenAccount: tokenAccountPublicKey,
       tokenAccountAuthority: tokenAuthorityPublicKey,
       recipientWallet: recipientWallet,
+      feeWallet: feeWallet,
       mint: mint,
     })
     .signers(ownerKeypair)

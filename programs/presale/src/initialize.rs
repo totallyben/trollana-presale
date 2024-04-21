@@ -26,6 +26,7 @@ pub fn init(
     presale_account.end_time = end_time;
     presale_account.is_active = true;
     presale_account.recipient_wallet = *ctx.accounts.recipient_wallet.key;
+    presale_account.fee_wallet = *ctx.accounts.fee_wallet.key;
     presale_account.tokens_per_sol = tokens_per_sol;
     presale_account.fee_percent = fee_percent;
     presale_account.min_buy = min_buy;
@@ -50,7 +51,7 @@ pub struct Initialize<'info> {
         seeds = [presale_ref.as_bytes(), b"presale_account".as_ref()], 
         bump,
         payer = payer,
-        space = 196,
+        space = 228,
     )]
     pub presale_account: Box<Account<'info, PresaleAccount>>,
     
@@ -90,6 +91,10 @@ pub struct Initialize<'info> {
     /// CHECK: This account is only used to derive its pubkey
     #[account()]
     pub recipient_wallet: AccountInfo<'info>,
+    /// CHECK: This account is only used to derive its pubkey
+    #[account()]
+    pub fee_wallet: AccountInfo<'info>,
+
     pub system_program: Program<'info, System>,
     #[account(address = TOKEN_2022_ID)]
     pub token_program: Program<'info, Token2022>,
