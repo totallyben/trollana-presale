@@ -1,8 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{
-    token_2022::{Token2022, ID as TOKEN_2022_ID},
-    token_interface::{Mint, TokenAccount},
-};
+// use anchor_spl::token::{Mint, TokenAccount, Token};
 
 use crate::account::*;
 
@@ -21,7 +18,7 @@ pub fn init(
 
     presale_account.is_initialized = true;
     presale_account.owner = ctx.accounts.payer.key();
-    presale_account.token_mint_address = ctx.accounts.mint.key();
+    presale_account.token_mint_address = *ctx.accounts.token_mint_address.key;
     presale_account.start_time = start_time;
     presale_account.end_time = end_time;
     presale_account.is_active = true;
@@ -65,28 +62,32 @@ pub struct Initialize<'info> {
     )]
     pub proceeds_vault: AccountInfo<'info>,
 
-    #[account(
-        init,
-        seeds = [presale_ref.as_bytes(), b"token_account".as_ref()], 
-        bump,
-        payer = payer, 
-        token::mint = mint, 
-        token::authority = token_account_authority,
-        token::token_program = token_program,
-    )]
-    pub token_account: InterfaceAccount<'info, TokenAccount>,
+    // #[account(
+    //     init,
+    //     seeds = [presale_ref.as_bytes(), b"token_account".as_ref()], 
+    //     bump,
+    //     payer = payer, 
+    //     token::mint = mint, 
+    //     token::authority = token_account_authority,
+    //     token::token_program = token_program,
+    // )]
+    // pub token_account: InterfaceAccount<'info, TokenAccount>,
 
-    /// CHECK: This account is only used to authorize transactions from the token_account
-    #[account(
-        seeds = [presale_ref.as_bytes(), b"token_account_authority".as_ref()], 
-        bump,
-    )]
-    pub token_account_authority: AccountInfo<'info>,
+    // /// CHECK: This account is only used to authorize transactions from the token_account
+    // #[account(
+    //     seeds = [presale_ref.as_bytes(), b"token_account_authority".as_ref()], 
+    //     bump,
+    // )]
+    // pub token_account_authority: AccountInfo<'info>,
+    // #[account(
+    //     owner = payer,
+    //     mint::authority = mint,
+    // )]
+    // pub mint: InterfaceAccount<'info, Mint>,
 
-    #[account(
-        mint::token_program = TOKEN_2022_ID,
-    )]
-    pub mint: InterfaceAccount<'info, Mint>,
+    /// CHECK: This account is only used to derive its pubkey
+    #[account()]
+    pub token_mint_address: AccountInfo<'info>,
 
     /// CHECK: This account is only used to derive its pubkey
     #[account()]
@@ -96,6 +97,5 @@ pub struct Initialize<'info> {
     pub fee_wallet: AccountInfo<'info>,
 
     pub system_program: Program<'info, System>,
-    #[account(address = TOKEN_2022_ID)]
-    pub token_program: Program<'info, Token2022>,
+    // pub token_program: Program<'info, Token>,
 }

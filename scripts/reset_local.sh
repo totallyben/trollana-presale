@@ -22,7 +22,8 @@ reset_wallets () {
 }
 
 generate_token () {
-  output=$(spl-token -p TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb create-token --enable-metadata 2>&1)
+  #output=$(spl-token -p TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb create-token --enable-metadata 2>&1)
+  output=$(spl-token -p TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA create-token 2>&1)
 
   TOKEN_MINT_ADDRESS=$(echo "$output" | grep -oP 'Creating token \K[^\s]+' )
   echo ${output}

@@ -20,9 +20,7 @@ async function loadKeypair(wallet) {
 }
 
 function getProgram(provider) {
-  console.log(process.env.PRESALE_PROGRAM_ID);
-  const programId = new PublicKey(process.env.PRESALE_PROGRAM_ID);
-  return new Program(idl, programId, provider);
+  return new Program(idl, provider);
 }
 
 async function main() {
@@ -53,8 +51,8 @@ async function main() {
   // Define start and end time for the presale
   const { BN } = anchor.default;
 
-  const startDate = new Date("2024-04-01T18:00:00Z");
-  const endDate = new Date("2024-04-09T17:59:59Z");
+  const startDate = new Date("2024-04-22T17:00:00Z");
+  const endDate = new Date("2024-04-25T21:00:00Z");
   const startTime = Math.floor(startDate / 1000); 
   const endTime = Math.floor(endDate / 1000);
 

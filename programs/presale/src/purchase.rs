@@ -86,24 +86,25 @@ pub fn buy(
     )?;
 
 
+    if presale_account.fee_percent > 0.0 {
+        // Create a transfer instruction from the buyer to the fee wallet
+        let transfer_instruction = system_instruction::transfer(
+            &buyer.key(),
+            &fee_wallet.key(),
+            fee_to_transfer,
+        );
 
-    // Create a transfer instruction from the buyer to the fee wallet
-    let transfer_instruction = system_instruction::transfer(
-        &buyer.key(),
-        &fee_wallet.key(),
-        fee_to_transfer,
-    );
-
-    // Invoke the transfer instruction
-    // msg!("Initiating transfer of {} SOL to recipient wallet", sol_amount);
-    invoke(
-        &transfer_instruction,
-        &[
-            buyer.to_account_info().clone(),
-            fee_wallet.to_account_info().clone(),
-            ctx.accounts.system_program.to_account_info().clone(),
-        ],
-    )?;
+        // Invoke the transfer instruction
+        // msg!("Initiating transfer of {} SOL to recipient wallet", sol_amount);
+        invoke(
+            &transfer_instruction,
+            &[
+                buyer.to_account_info().clone(),
+                fee_wallet.to_account_info().clone(),
+                ctx.accounts.system_program.to_account_info().clone(),
+            ],
+        )?;
+    }
     
     msg!("receipt: token={}, buyer={}, spend={}, tokens={}", presale_account.token_mint_address.to_string(), buyer.key().to_string(), sol_amount, token_amount_without_decimal);
     // msg!("presaleInfo: token={}, sales={}, amountRaised={}", presale_account.token_mint_address.key().to_string(), presale_account.num_sales, presale_account.amount_raised);

@@ -5,7 +5,7 @@ import bs58 from 'bs58';
 
 import { Connection, PublicKey, Keypair, clusterApiUrl } from '@solana/web3.js';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import {  TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+// import {  TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import * as anchor from '@coral-xyz/anchor';
 import { AnchorProvider, Program, Wallet } from '@coral-xyz/anchor';
 
@@ -36,7 +36,8 @@ async function main() {
     rpcUrl = localnetUrl || 'http://127.0.0.1:8899';
   }
 
-  console.log(rpcUrl);
+  console.log('network', network, rpcUrl);
+
   const connection = new Connection(rpcUrl);
   
   // Assuming you have a keypair for the wallet (this is just an example)
@@ -53,12 +54,12 @@ async function main() {
   const minBuy = 0.1;
   const maxBuy = 2;
   const presaleTokensAvailable = 20000000;
-  const feePercent = 3;
+  const feePercent = 2.5;
 
   // Define start and end time for the presale
   const { BN } = anchor.default;
 
-  const startDate = new Date("2024-04-02T18:00:00Z");
+  const startDate = new Date("2024-04-2202T18:00:00Z");
   const endDate = new Date("2024-04-25T18:00:00Z");
   const startTime = Math.floor(startDate / 1000); 
   const endTime = Math.floor(endDate / 1000);
@@ -69,7 +70,6 @@ async function main() {
   const presaleRef = bs58.encode(firstTenBytes); 
 
   console.log('presaleRef', presaleRef);
-  // return;
   
   const [presaleAccountPublicKey] = PublicKey.findProgramAddressSync(
     [Buffer.from(presaleRef), Buffer.from('presale_account')],
@@ -97,8 +97,8 @@ async function main() {
     const presaleAccountData = await program.account.presaleAccount.fetch(presaleAccountPublicKey);
     if (presaleAccountData.isInitialized) {
       console.log('presaleAccountData.isInitialized', presaleAccountData.isInitialized);
-      console.log('presaleAccountData.destinationWalletPubkey', presaleAccountData.destinationWalletPubkey.toString());
-      console.log('tokenAccountPublicKey', tokenAccountPublicKey.toString());
+      console.log('presaleAccountData.destinationWalletPubkey', presaleAccountData.destinationWalletPubkey?.toString());
+      console.log('tokenAccountPublicKey', tokenAccountPublicKey?.toString());
       return;
     }
   }
@@ -117,12 +117,12 @@ async function main() {
       proceedsVault: proceedsVaultPublicKey,
       // user: provider.wallet.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
-      tokenProgram: TOKEN_2022_PROGRAM_ID,
-      tokenAccount: tokenAccountPublicKey,
-      tokenAccountAuthority: tokenAuthorityPublicKey,
+      // tokenProgram: TOKEN_2022_PROGRAM_ID,
+      // tokenAccount: tokenAccountPublicKey,
+      // tokenAccountAuthority: tokenAuthorityPublicKey,
       recipientWallet: recipientWallet,
       feeWallet: feeWallet,
-      mint: mint,
+      tokenMintAddress: mint,
     })
     .signers(ownerKeypair)
     .rpc();
@@ -155,7 +155,7 @@ async function pollForInitialization(program, presaleAccountPublicKey, tokenAcco
           if (presaleAccountData.isInitialized) {
             clearInterval(intervalId);
             console.log('Initialization confirmed');
-            console.log('tokenAccountPublicKey', tokenAccountPublicKey.toString());
+            console.log('tokenAccountPublicKey', tokenAccountPublicKey?.toString());
             resolve();
           }
         }
